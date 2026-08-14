@@ -11,28 +11,6 @@ next: []
 # SCHEDULING_COMPONENT_SKILL
 > jardissupport/scheduling | NS: `JardisSupport\Scheduling` | Pure-logic scheduling | PHP 8.2+
 
-## ARCHITECTURE
-```
-Schedule (Orchestrator, fluent API)
-  → TaskBuilder (collects config)
-    → ScheduledTask (final readonly VO)
-      → CronExpression (Orchestrator, 5 closures bound in parse())
-          ParseExpression     string → array<int, list<int>|null>
-          ResolveTimezone     DateTimeInterface → DateTimeImmutable
-          MatchFields         DateTimeImmutable → bool
-          FindNextRun         DateTimeImmutable → DateTimeImmutable
-          FindPreviousRun     DateTimeImmutable → DateTimeImmutable
-          DescribeExpression  () → string
-
-Constraints (ConstraintInterface: __invoke(DateTimeInterface): bool)
-  TimeWindow         between / unlessBetween
-  DayOfWeek          weekdays / weekends / days
-  CallableCondition  when / skip (inverted flag)
-  EnvironmentMatch   environments
-
-ValidateSchedule → list<ScheduleViolation>
-```
-
 ## CONTRACTS (`JardisSupport\Contract\Scheduling\*`)
 ```php
 CronExpressionInterface: isDue($now), nextRun($from), nextRuns($from, $count), previousRun($from), describe()
@@ -92,7 +70,6 @@ Steps:       */5 * * * *
 Combined:    1-10/3 * * * *
 Predefined:  @daily @hourly @weekly @monthly @yearly @annually @midnight
 ```
-- `null` in parsed array = wildcard; `list<int>` = resolved values.
 - Weekday `7` is alias for `0` (Sunday).
 
 ## FLUENT TIME HELPERS
@@ -144,7 +121,6 @@ InvalidScheduleException::invalidTime(string $time)
 ```
 
 ## CONVENTIONS
-- Tags: OR semantics when filtering; `array_values(array_unique(...))` on merge.
+- Tags: OR semantics when filtering; deduplicated on merge.
 - Priority: sorted descending (highest value first).
-- `ScheduledTask::constraints()` accessor used by `ValidateSchedule`.
-- `ValidateSchedule` checks: empty schedule (warning), duplicate names (error), conflicting day constraints (warning).
+- `validate()` checks: empty schedule (warning), duplicate names (error), conflicting day constraints (warning).
