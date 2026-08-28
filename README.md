@@ -32,6 +32,8 @@
 composer require jardissupport/scheduling
 ```
 
+Requires `jardissupport/contracts` ^2.0 (ab dieser Version).
+
 ---
 
 ## Quick Start
