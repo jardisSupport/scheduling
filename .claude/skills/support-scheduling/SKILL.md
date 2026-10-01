@@ -4,7 +4,7 @@ description: Cron parsing, task scheduling, fluent API, tags, priority, validati
 user-invocable: false
 zone: post-active
 persona: C
-prerequisites: [rules-architecture, rules-patterns]
+prerequisites: [foundation-architecture, foundation-patterns]
 next: []
 ---
 
