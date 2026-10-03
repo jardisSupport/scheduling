@@ -385,8 +385,6 @@ The runner calls `dueNow()` and decides what to do with the results.
 
 Scheduling is wired directly — no ENV configuration, no framework hook. `DomainKernel` (the Koffer in `jardiscore/kernel`) exposes 11 accessors for cross-cutting infrastructure, but no `scheduling()`: the schedule is defined programmatically in your application layer:
 
-*(Earlier docs described this as "no Foundation handler" — `jardiscore/foundation` was removed in the Kernel-Entkopplung refactor. The fact is unchanged, only the vocabulary: today's Koffer is `DomainKernel`, consumed by the generated `{Domain}Context`.)*
-
 ```php
 // In a class extending `{Domain}Context`, or an Application Service:
 $schedule = Schedule::create()
