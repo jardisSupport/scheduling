@@ -2,7 +2,7 @@
 
 ![Build Status](https://github.com/jardisSupport/scheduling/actions/workflows/ci.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE.md)
-[![PHP Version](https://img.shields.io/badge/PHP-%3E%3D8.2-777BB4.svg)](https://www.php.net/)
+[![PHP Version](https://img.shields.io/badge/PHP-%3E%3D8.3-777BB4.svg)](https://www.php.net/)
 [![PHPStan Level](https://img.shields.io/badge/PHPStan-Level%208-brightgreen.svg)](phpstan.neon)
 [![PSR-12](https://img.shields.io/badge/Code%20Style-PSR--12-blue.svg)](phpcs.xml)
 
@@ -366,7 +366,11 @@ Schedule (Orchestrator)
   │   ├── CallableCondition  when/skip
   │   └── EnvironmentMatch   environments
   │
-  └── ValidateSchedule → list<ScheduleViolation>
+  ├── ValidateSchedule → list<ScheduleViolation>
+  │
+  └── Clock (PSR-20)
+      ├── SystemClock   real time, timezone default UTC
+      └── FixedClock    frozen instant, advance() → new instance
 ```
 
 ### What This Package Does NOT Do
@@ -378,6 +382,38 @@ Schedule (Orchestrator)
 - **No retry/error handling** — that's the runner's job
 
 The runner calls `dueNow()` and decides what to do with the results.
+
+---
+
+## Clock (PSR-20)
+
+*Available since 1.2.0.* Code that reads the time via `new DateTimeImmutable()` or `microtime()` is not testable and hides a dependency (Pillar 5: explicit dependencies). Inject a `Psr\Clock\ClockInterface` instead. The package ships two implementations in `JardisSupport\Scheduling\Clock`:
+
+| Class | Purpose |
+|-------|---------|
+| `SystemClock` | Real time. `new SystemClock(?DateTimeZone $timezone = null)` — default UTC. |
+| `FixedClock` | Frozen instant. `new FixedClock(DateTimeImmutable $now)`; `advance(DateInterval)` returns a **new** clock (immutable). |
+
+`Schedule::dueNow()` still takes `$now` from the outside — the clock is what you pass in:
+
+```php
+use JardisSupport\Scheduling\Clock\FixedClock;
+use JardisSupport\Scheduling\Clock\SystemClock;
+use JardisSupport\Scheduling\Schedule;
+
+$schedule = Schedule::create()->task('cleanup:expired')->dailyAt('03:00');
+
+// Production
+$clock = new SystemClock();
+$due = $schedule->dueNow($clock->now());
+
+// Test — deterministic
+$clock = new FixedClock(new DateTimeImmutable('2026-04-05 02:59:00'));
+$schedule->dueNow($clock->now());                                   // []
+$schedule->dueNow($clock->advance(new DateInterval('PT1M'))->now()); // [cleanup:expired]
+```
+
+`psr/clock` is pulled in through `jardissupport/contracts` (>= 2.12); no separate require is needed.
 
 ---
 

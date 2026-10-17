@@ -1,6 +1,6 @@
 ---
 name: support-scheduling
-description: Cron parsing, task scheduling, fluent API, tags, priority, validation. Use for CronExpression, Schedule, ScheduledTask.
+description: Cron parsing, task scheduling, fluent API, tags, priority, validation, PSR-20 clock (SystemClock, FixedClock). Use for CronExpression, Schedule, ScheduledTask, ClockInterface, SystemClock, FixedClock, psr/clock.
 user-invocable: false
 zone: post-active
 persona: C
@@ -9,7 +9,7 @@ next: []
 ---
 
 # SCHEDULING_COMPONENT_SKILL
-> jardissupport/scheduling | NS: `JardisSupport\Scheduling` | Pure-logic scheduling | PHP 8.2+
+> jardissupport/scheduling | NS: `JardisSupport\Scheduling` | Pure-logic scheduling + PSR-20 clock | PHP 8.3+
 
 ## CONTRACTS (`JardisSupport\Contract\Scheduling\*`)
 ```php
@@ -57,6 +57,20 @@ $cron->nextRuns($from, 5);     // list<DateTimeInterface>
 $cron->previousRun($from);     // DateTimeInterface
 $cron->describe();             // human-readable string
 ```
+
+## CLOCK (PSR-20, since 1.2.0)
+`psr/clock` arrives via `jardissupport/contracts` >= 2.12 (no own require). Inject `Psr\Clock\ClockInterface` instead of `new DateTimeImmutable()`/`microtime()`.
+```php
+use JardisSupport\Scheduling\Clock\SystemClock;
+use JardisSupport\Scheduling\Clock\FixedClock;
+
+$clock = new SystemClock();                          // now(): DateTimeImmutable, timezone default UTC
+$clock = new SystemClock(new DateTimeZone('Europe/Berlin'));
+$fixed = new FixedClock(new DateTimeImmutable('2026-04-05 02:59:00')); // now() always the same instant
+$later = $fixed->advance(new DateInterval('PT1M'));  // NEW FixedClock, original unchanged
+$schedule->dueNow($clock->now());                    // Schedule still takes $now from outside
+```
+Both are `final readonly`, implement `ClockInterface`. `Schedule`/`TimeWindow` do not use the clock themselves.
 
 ## CRON SYNTAX
 ```
